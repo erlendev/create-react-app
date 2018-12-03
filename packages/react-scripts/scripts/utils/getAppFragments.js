@@ -6,24 +6,39 @@ const request = require('request');
 const { JSDOM } = jsdom;
 
 const requestAppFragments = callback =>
-  request(
-    `http://appres.nav.no/common-html/v4/navno?header=true&styles=true&scripts=true&footer=true`,
-    callback
-  );
+  request(process.env.APPRES_CMS_URL, callback);
+
+const extractFragmentsFromDocument = document => {
+  const scriptEl = document.getElementById('scripts');
+  const stylesEl = document.getElementById('styles');
+  const headingEl = document.getElementById('header');
+  const footerEl = document.getElementById('footer');
+
+  const property = 'innerHTML';
+
+  const fragments = {};
+  if (scriptEl !== null) {
+    fragments.NAV_SCRIPTS = scriptEl[property];
+  }
+  if (stylesEl !== null) {
+    fragments.NAV_STYLES = stylesEl[property];
+  }
+  if (headingEl !== null) {
+    fragments.NAV_HEADING = headingEl[property];
+  }
+  if (footerEl !== null) {
+    fragments.NAV_FOOTER = footerEl[property];
+  }
+
+  return fragments;
+};
 
 const getAppFragments = () =>
   new Promise((resolve, reject) => {
     const callback = (error, response, body) => {
       if (!error && response.statusCode >= 200 && response.statusCode < 400) {
         const { document } = new JSDOM(body).window;
-        const prop = 'innerHTML';
-        const data = {
-          NAV_SCRIPTS: document.getElementById('scripts')[prop],
-          NAV_STYLES: document.getElementById('styles')[prop],
-          NAV_HEADING: document.getElementById('header')[prop],
-          NAV_FOOTER: document.getElementById('footer')[prop],
-        };
-        resolve(data);
+        resolve(extractFragmentsFromDocument(document));
       } else {
         console.log(error);
         reject(new Error(error));
