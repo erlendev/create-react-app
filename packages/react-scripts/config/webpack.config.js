@@ -77,7 +77,11 @@ module.exports = function(webpackEnv) {
   const env = getClientEnvironment(publicUrl);
 
   // common function to get style loaders
-  const getStyleLoaders = (cssOptions, preProcessor) => {
+  const getStyleLoaders = (
+    cssOptions,
+    preProcessor,
+    additionalPreProcessorOptions = {}
+  ) => {
     const loaders = [
       isEnvDevelopment && require.resolve('style-loader'),
       isEnvProduction && {
@@ -114,11 +118,13 @@ module.exports = function(webpackEnv) {
       },
     ].filter(Boolean);
     if (preProcessor) {
+      const options = {
+        sourceMap: isEnvProduction && shouldUseSourceMap,
+        ...additionalPreProcessorOptions,
+      };
       loaders.push({
         loader: require.resolve(preProcessor),
-        options: {
-          sourceMap: isEnvProduction && shouldUseSourceMap,
-        },
+        options,
       });
     }
     return loaders;
@@ -504,7 +510,13 @@ module.exports = function(webpackEnv) {
                   importLoaders: 2,
                   sourceMap: isEnvProduction && shouldUseSourceMap,
                 },
-                'less-loader'
+                'less-loader',
+                {
+                  globalVars: {
+                    coreModulePath: '"~"',
+                    nodeModulesPath: '"~"',
+                  },
+                }
               ),
               // Don't consider CSS imports dead code even if the
               // containing package claims to have no side effects.
