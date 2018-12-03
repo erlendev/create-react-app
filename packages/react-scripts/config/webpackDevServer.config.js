@@ -14,11 +14,12 @@ const noopServiceWorkerMiddleware = require('react-dev-utils/noopServiceWorkerMi
 const ignoredFiles = require('react-dev-utils/ignoredFiles');
 const paths = require('./paths');
 const fs = require('fs');
+const mustacheExpress = require('mustache-express');
 
 const protocol = process.env.HTTPS === 'true' ? 'https' : 'http';
 const host = process.env.HOST || '0.0.0.0';
 
-module.exports = function(proxy, allowedHost) {
+module.exports = function(proxy, allowedHost, decoratorFragments) {
   return {
     // WebpackDevServer 2.4.3 introduced a security fix that prevents remote
     // websites from potentially accessing local content through DNS rebinding:
@@ -107,6 +108,14 @@ module.exports = function(proxy, allowedHost) {
       // it used the same host and port.
       // https://github.com/facebook/create-react-app/issues/2272#issuecomment-302832432
       app.use(noopServiceWorkerMiddleware());
+
+      app.engine('html', mustacheExpress());
+      app.set('views', paths.appPublic);
+
+      app.set('view engine', 'mustache');
+      app.get(/^\/(?!.*dist).*$/, (req, res) => {
+        res.render('index.html', Object.assign(decoratorFragments));
+      });
     },
   };
 };
