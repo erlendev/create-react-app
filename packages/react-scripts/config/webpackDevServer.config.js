@@ -92,6 +92,10 @@ module.exports = function(proxy, allowedHost, decoratorFragments) {
     public: allowedHost,
     proxy,
     before(app, server) {
+      app.engine('html', mustacheExpress());
+      app.set('views', paths.appPublic);
+      app.set('view engine', 'html');
+
       if (fs.existsSync(paths.proxySetup)) {
         // This registers user provided middleware for proxy reasons
         require(paths.proxySetup)(app);
@@ -109,12 +113,8 @@ module.exports = function(proxy, allowedHost, decoratorFragments) {
       // https://github.com/facebook/create-react-app/issues/2272#issuecomment-302832432
       app.use(noopServiceWorkerMiddleware());
 
-      app.engine('html', mustacheExpress());
-      app.set('views', paths.appPublic);
-
-      app.set('view engine', 'mustache');
-      app.get(/^\/(?!.*dist).*$/, (req, res) => {
-        res.render('index.html', Object.assign(decoratorFragments));
+      app.get(/^\/(?!.*static).*$/, (req, res) => {
+        res.render(paths.appBuild, decoratorFragments);
       });
     },
   };
